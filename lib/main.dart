@@ -58,7 +58,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        toolbarHeight: 80,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 40.0),
+          child: Text(
+            widget.title,
+            style: const TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -72,18 +82,44 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
           ),
-          TextField(
-            controller: _taskController,
-            decoration: InputDecoration(
-              hintText: 'Enter a new task',
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: 70,
+                height: 70,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text('Add Task'),
+                          content: TextField(
+                            controller: _taskController,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                appState.addTask(_taskController.text);
+                                Navigator.pop(context);
+                                _taskController.clear();
+                              },
+                              child: const Text('Add'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: const Text(
+                    '+',
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              appState.addTask(_taskController.text);
-              _taskController.clear();
-            },
-            child: Text('Add Task'),
           ),
         ],
       ),
