@@ -98,39 +98,63 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return LayoutBuilder(builder: (context, constraints) {
-      return Scaffold(
-        body: Row(
-          children: [
-            SafeArea(
-              child: NavigationRail(
-                extended: constraints.maxWidth > 600,
-                destinations: const [
-                  NavigationRailDestination(
-                    icon: Icon(Icons.timelapse),
-                    label: Text('Pending'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.check_circle),
-                    label: Text('Completed'),
-                  ),
-                ],
-                selectedIndex: selectedIndex,
-                onDestinationSelected: (value) {
-                  setState(() {
-                    selectedIndex = value;
-                  });
-                },
+      if (constraints.maxWidth > 900) {
+        return Scaffold(
+          body: Row(
+            children: [
+              SafeArea(
+                child: NavigationRail(
+                  extended: true,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.timelapse),
+                      label: Text('Pending'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.check_circle),
+                      label: Text('Completed'),
+                    ),
+                  ],
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (value) {
+                    setState(() {
+                      selectedIndex = value;
+                    });
+                  },
+                ),
               ),
-            ),
-            Expanded(
-              child: Container(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: page,
+              Expanded(
+                child: Container(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  child: page,
+                ),
               ),
-            ),
-          ],
-        ),
-      );
+            ],
+          ),
+        );
+      } else {
+        return Scaffold(
+          body: page,
+          bottomNavigationBar: BottomNavigationBar(
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.timelapse),
+                label: 'Pending',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.check_circle),
+                label: 'Completed',
+              ),
+            ],
+            currentIndex: selectedIndex,
+            onTap: (value) {
+              setState(() {
+                selectedIndex = value;
+              });
+            },
+          ),
+        );
+      }
     });
   }
 }
