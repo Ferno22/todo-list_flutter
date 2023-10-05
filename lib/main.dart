@@ -24,33 +24,48 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyAppState extends ChangeNotifier {
-  var pendingTasks = [];
-  var completedTasks = [];
+String formatDate(DateTime dateTime) {
+  String day = dateTime.day.toString().padLeft(2, '0');
+  String month = dateTime.month.toString().padLeft(2, '0');
+  String year = dateTime.year.toString();
+  String hour = dateTime.hour.toString().padLeft(2, '0');
+  String minute = dateTime.minute.toString().padLeft(2, '0');
 
-  void addTask(String task) {
-    if (task.isEmpty) {
-      return;
-    } else if (completedTasks.contains(task)) {
-      completedTasks.remove(task);
-      pendingTasks.add(task);
-      notifyListeners();
-    } else {
-      pendingTasks.add(task);
-      notifyListeners();
-    }
+  return '$day/$month/$year $hour:$minute';
+}
+
+class Task {
+  final String name;
+  final String description;
+  DateTime dateTime;
+
+  Task({required this.name, required this.description, required this.dateTime});
+}
+
+class MyAppState extends ChangeNotifier {
+  var pendingTasks = <Task>[];
+  var completedTasks = <Task>[];
+
+  void addTask(String name, String description, DateTime dateTime) {
+    Task task = Task(name: name, description: description, dateTime: dateTime);
+    pendingTasks.add(task);
+    notifyListeners();
   }
 
-  void completeTask(String task) {
+  void completeTask(Task task) {
     pendingTasks.remove(task);
     completedTasks.add(task);
     notifyListeners();
   }
 
-  void updateTask(String oldTask, String newTask) {
-    if (newTask.isEmpty) {
-      return;
-    } else if (completedTasks.contains(oldTask)) {
+  void uncompleteTask(Task task) {
+    completedTasks.remove(task);
+    pendingTasks.add(task);
+    notifyListeners();
+  }
+
+  void updateTask(Task oldTask, Task newTask) {
+    if (completedTasks.contains(oldTask)) {
       completedTasks.remove(oldTask);
       completedTasks.add(newTask);
       notifyListeners();
@@ -60,7 +75,7 @@ class MyAppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteTask(String task) {
+  void deleteTask(Task task) {
     if (pendingTasks.contains(task)) {
       pendingTasks.remove(task);
       notifyListeners();
@@ -160,7 +175,9 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class PendingTasksPage extends StatelessWidget {
-  final TextEditingController _taskController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _dateTimeController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -187,13 +204,25 @@ class PendingTasksPage extends StatelessWidget {
               itemCount: appState.pendingTasks.length,
               itemBuilder: (context, index) {
                 return ListTile(
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        appState.pendingTasks[index].name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                          'Description: ${appState.pendingTasks[index].description}'),
+                      Text(
+                          'Date and Time: ${formatDate(appState.pendingTasks[index].dateTime)}'),
+                    ],
+                  ),
                   leading: IconButton(
                     icon: const Icon(Icons.check),
                     onPressed: () {
                       appState.completeTask(appState.pendingTasks[index]);
                     },
                   ),
-                  title: Text(appState.pendingTasks[index]),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -222,15 +251,75 @@ class PendingTasksPage extends StatelessWidget {
                       builder: (context) {
                         return AlertDialog(
                           title: const Text('Add Task'),
-                          content: TextField(
-                            controller: _taskController,
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                controller: _nameController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Name',
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: _descriptionController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Description',
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: _dateTimeController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Date and Time',
+                                ),
+                                onTap: () async {
+                                  DateTime? pickedDate = await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now(),
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime(2101),
+                                  );
+
+                                  if (pickedDate != null) {
+                                    TimeOfDay? pickedTime =
+                                        await showTimePicker(
+                                      context: context,
+                                      initialTime: TimeOfDay.now(),
+                                    );
+
+                                    if (pickedTime != null) {
+                                      DateTime selectedDateTime = DateTime(
+                                        pickedDate.year,
+                                        pickedDate.month,
+                                        pickedDate.day,
+                                        pickedTime.hour,
+                                        pickedTime.minute,
+                                      );
+
+                                      _dateTimeController.text =
+                                          selectedDateTime.toString();
+                                    }
+                                  }
+                                },
+                              ),
+                            ],
                           ),
                           actions: [
                             TextButton(
                               onPressed: () {
-                                appState.addTask(_taskController.text);
-                                Navigator.pop(context);
-                                _taskController.clear();
+                                if (_nameController.text.isNotEmpty &&
+                                    _descriptionController.text.isNotEmpty &&
+                                    _dateTimeController.text.isNotEmpty) {
+                                  DateTime dateTime =
+                                      DateTime.parse(_dateTimeController.text);
+                                  appState.addTask(_nameController.text,
+                                      _descriptionController.text, dateTime);
+                                  Navigator.pop(context);
+                                  _nameController.clear();
+                                  _descriptionController.clear();
+                                  _dateTimeController.clear();
+                                }
                               },
                               child: const Text('Add'),
                             ),
@@ -276,13 +365,25 @@ class CompletedTasksPage extends StatelessWidget {
         itemCount: appState.completedTasks.length,
         itemBuilder: (context, index) {
           return ListTile(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appState.completedTasks[index].name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                    'Description: ${appState.completedTasks[index].description}'),
+                Text(
+                    'Date and Time: ${formatDate(appState.completedTasks[index].dateTime)}'),
+              ],
+            ),
             leading: IconButton(
               icon: const Icon(Icons.undo),
               onPressed: () {
-                appState.addTask(appState.completedTasks[index]);
+                appState.uncompleteTask(appState.completedTasks[index]);
               },
             ),
-            title: Text(appState.completedTasks[index]),
           );
         },
       ),
@@ -291,7 +392,7 @@ class CompletedTasksPage extends StatelessWidget {
 }
 
 class TaskDetailsPage extends StatefulWidget {
-  final String task;
+  final Task task;
 
   const TaskDetailsPage({Key? key, required this.task}) : super(key: key);
 
@@ -300,17 +401,25 @@ class TaskDetailsPage extends StatefulWidget {
 }
 
 class _TaskDetailsPageState extends State<TaskDetailsPage> {
-  late TextEditingController _taskController;
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _dateTimeController;
 
   @override
   void initState() {
     super.initState();
-    _taskController = TextEditingController(text: widget.task);
+    _nameController = TextEditingController(text: widget.task.name);
+    _descriptionController =
+        TextEditingController(text: widget.task.description);
+    _dateTimeController =
+        TextEditingController(text: widget.task.dateTime.toString());
   }
 
   @override
   void dispose() {
-    _taskController.dispose();
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _dateTimeController.dispose();
     super.dispose();
   }
 
@@ -321,34 +430,75 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 100,
-        title: Text(widget.task),
+        title: Text(widget.task.name),
       ),
       body: Center(
-        // text field to edit the details of a task
+        // form to edit the details of a task
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: TextField(
-                controller: _taskController,
+                controller: _nameController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  labelText: 'Task',
+                  labelText: 'Name',
                 ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Description',
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _dateTimeController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Date and Time',
+                ),
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: widget.task.dateTime,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2101),
+                  );
+
+                  if (pickedDate != null) {
+                    TimeOfDay? pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(widget.task.dateTime),
+                    );
+
+                    if (pickedTime != null) {
+                      setState(() {
+                        widget.task.dateTime = DateTime(
+                          pickedDate.year,
+                          pickedDate.month,
+                          pickedDate.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
+                        );
+                        _dateTimeController.text =
+                            formatDate(widget.task.dateTime);
+                      });
+                    }
+                  }
+                },
               ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    appState.deleteTask(widget.task);
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Delete'),
-                ),
-                const SizedBox(width: 20),
                 ElevatedButton(
                   onPressed: () {
                     appState.completeTask(widget.task);
@@ -359,10 +509,20 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                 const SizedBox(width: 20),
                 ElevatedButton(
                   onPressed: () {
-                    appState.updateTask(
-                      widget.task,
-                      _taskController.text,
+                    appState.deleteTask(widget.task);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Delete'),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Task updatedTask = Task(
+                      name: _nameController.text,
+                      description: _descriptionController.text,
+                      dateTime: widget.task.dateTime,
                     );
+                    appState.updateTask(widget.task, updatedTask);
                     Navigator.pop(context);
                   },
                   child: const Text('Update'),
