@@ -106,7 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
         page = PendingTasksPage();
         break;
       case 1:
-        page = CompletedTasksPage();
+        page = const CompletedTasksPage();
         break;
       default:
         throw Exception('Invalid index: $selectedIndex');
@@ -178,6 +178,8 @@ class PendingTasksPage extends StatelessWidget {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _dateTimeController = TextEditingController();
+
+  PendingTasksPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -283,6 +285,7 @@ class PendingTasksPage extends StatelessWidget {
 
                                   if (pickedDate != null) {
                                     TimeOfDay? pickedTime =
+                                        // ignore: use_build_context_synchronously
                                         await showTimePicker(
                                       context: context,
                                       initialTime: TimeOfDay.now(),
@@ -343,6 +346,8 @@ class PendingTasksPage extends StatelessWidget {
 }
 
 class CompletedTasksPage extends StatelessWidget {
+  const CompletedTasksPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -397,6 +402,7 @@ class TaskDetailsPage extends StatefulWidget {
   const TaskDetailsPage({Key? key, required this.task}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _TaskDetailsPageState createState() => _TaskDetailsPageState();
 }
 
@@ -474,6 +480,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                   );
 
                   if (pickedDate != null) {
+                    // ignore: use_build_context_synchronously
                     TimeOfDay? pickedTime = await showTimePicker(
                       context: context,
                       initialTime: TimeOfDay.fromDateTime(widget.task.dateTime),
