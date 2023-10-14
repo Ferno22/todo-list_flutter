@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart'; // Flutter framework for building UI
 import 'package:provider/provider.dart'; // Provider package for state management
 
+
 // Entry point of the application
 void main() {
   runApp(const MyApp()); // Run the MyApp widget as the root of the app
