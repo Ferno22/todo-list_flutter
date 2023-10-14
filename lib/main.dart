@@ -216,7 +216,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+// Maybe add input validation here, it is true that when you add a task with empty fields you cannot do it
+// but it would be better to show a message to the user.
 class PendingTasksPage extends StatelessWidget {
+
+  //  to truly reduce the scope of these variables, you can encapsulate them within a custom widget or class
+
   final TextEditingController _nameController =
       TextEditingController(); // Controller for the name text field
   final TextEditingController _descriptionController =
@@ -230,6 +235,9 @@ class PendingTasksPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>(); // Get the app state
 
+    // Optimization to have a better look on chrome would be good.
+    // It is user friendly but it is not very good looking.
+    
     return Scaffold(
       appBar: AppBar(
         // Display an AppBar at the top of the screen
@@ -320,6 +328,9 @@ class PendingTasksPage extends StatelessWidget {
                           content: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+
+                              // Consider creating custom widgets or functions for these shared elements to reduce redundancy.
+
                               TextField(
                                 // Display a text field to enter the name of the task
                                 controller: _nameController,
